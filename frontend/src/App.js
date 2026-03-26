@@ -27,19 +27,28 @@ function GuestRoute({ children }) {
   return children;
 }
 
-// Normal kullanıcılar için basit bir Ana Sayfa rotası oluşturuyoruz
 function HomeRoute() {
   const { kullanici, yukleniyor } = useAuth();
   if (yukleniyor) return <div className="spinner" style={{ marginTop: 80 }} />;
-  if (!kullanici) return <Navigate to="/login" replace />; // Giriş yapmadıysa logine
-  if (kullanici.rol === 'admin') return <Navigate to="/admin" replace />; // Adminse panele
+  if (!kullanici) return <Navigate to="/login" replace />;
+  if (kullanici.rol === 'admin') return <Navigate to="/admin" replace />;
   
-  // Normal kullanıcıysa bu mesajı görecek (Döngü kırıldı!)
   return (
     <div style={{ padding: '50px', textAlign: 'center', fontFamily: 'sans-serif' }}>
       <h2>Hoş Geldiniz, {kullanici.isim || 'Kullanıcı'}! 🎉</h2>
       <p>Kayıt işleminiz başarıyla tamamlandı.</p>
       <p>Anketlere katılmak için size gönderilen özel linkleri kullanabilirsiniz.</p>
+      
+      <button 
+        onClick={() => { 
+          localStorage.clear(); 
+          sessionStorage.clear(); 
+          window.location.href = '/login'; 
+        }}
+        style={{ marginTop: '20px', padding: '10px 20px', cursor: 'pointer', backgroundColor: '#ff4d4f', color: 'white', border: 'none', borderRadius: '5px' }}
+      >
+        Çıkış Yap
+      </button>
     </div>
   );
 }
@@ -61,7 +70,6 @@ function AppRoutes() {
       <Route path="/admin/surveys/:id/dashboard" element={<AdminRoute><AdminDashboardPage /></AdminRoute>} />
 
       {/* Default */}
-      {/* Artık '/' rotası herkesi logine atmak yerine HomeRoute bileşenini çalıştıracak */}
       <Route path="/" element={<HomeRoute />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
