@@ -4,8 +4,8 @@ import { authAPI } from '../services/api';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ ad: '', eposta: '', sifre: '' });
-  const [hata, setHata] = useState('');
+  const [form, setForm]           = useState({ ad: '', eposta: '', sifre: '' });
+  const [hata, setHata]           = useState('');
   const [yukleniyor, setYukleniyor] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -27,40 +27,73 @@ export default function RegisterPage() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-      <div className="card" style={{ width: '100%', maxWidth: 420 }}>
-        <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{ fontSize: '2.5rem', marginBottom: 8 }}>✍️</div>
-          <h1 style={{ fontSize: '1.6rem', fontWeight: 800 }}>Kayıt Ol</h1>
+    <div className="auth-layout">
+      <div className="auth-card">
+
+        <div className="auth-logo">
+          <div className="auth-logo-icon">📊</div>
+          <span className="auth-logo-text">Anket Platform</span>
         </div>
+
+        <h1 className="auth-heading">Hesap oluşturun</h1>
+        <p className="auth-subheading">Birkaç adımda ankete katılmaya hazır olun.</p>
 
         {hata && <div className="alert alert-error">{hata}</div>}
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label className="form-label">Adınız</label>
-            <input type="text" className="form-input" placeholder="Ad Soyad"
-              value={form.ad} onChange={e => setForm({ ...form, ad: e.target.value })} required />
+            <label className="form-label">Adınız Soyadınız</label>
+            <input
+              type="text"
+              className="form-input"
+              placeholder="Ad Soyad"
+              value={form.ad}
+              onChange={e => setForm({ ...form, ad: e.target.value })}
+              required
+              autoComplete="name"
+            />
           </div>
+
           <div className="form-group">
-            <label className="form-label">E-posta</label>
-            <input type="email" className="form-input" placeholder="ornek@mail.com"
-              value={form.eposta} onChange={e => setForm({ ...form, eposta: e.target.value })} required />
+            <label className="form-label">E-posta adresi</label>
+            <input
+              type="email"
+              className="form-input"
+              placeholder="ornek@mail.com"
+              value={form.eposta}
+              onChange={e => setForm({ ...form, eposta: e.target.value })}
+              required
+              autoComplete="email"
+            />
           </div>
+
           <div className="form-group">
-            <label className="form-label">Şifre (en az 8 karakter)</label>
-            <input type="password" className="form-input" placeholder="••••••••"
-              value={form.sifre} onChange={e => setForm({ ...form, sifre: e.target.value })} required />
+            <label className="form-label">Şifre</label>
+            <input
+              type="password"
+              className="form-input"
+              placeholder="En az 8 karakter"
+              value={form.sifre}
+              onChange={e => setForm({ ...form, sifre: e.target.value })}
+              required
+              autoComplete="new-password"
+            />
+            <span className="form-hint">En az 8 karakter kullanınız.</span>
           </div>
-          <button type="submit" className="btn btn-primary btn-full" disabled={yukleniyor}>
-            {yukleniyor ? 'Kaydediliyor...' : 'Kayıt Ol'}
+
+          <button
+            type="submit"
+            className={`btn btn-primary btn-pill btn-full ${yukleniyor ? 'btn-loading' : ''}`}
+            disabled={yukleniyor}
+          >
+            <span>{yukleniyor ? 'Kaydediliyor...' : 'Hesap Oluştur'}</span>
           </button>
         </form>
 
-        <p style={{ textAlign: 'center', marginTop: 20, color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+        <div className="auth-footer">
           Zaten hesabınız var mı?{' '}
-          <Link to="/login" style={{ color: 'var(--primary)', fontWeight: 600 }}>Giriş Yap</Link>
-        </p>
+          <Link to="/login">Giriş yapın</Link>
+        </div>
       </div>
     </div>
   );

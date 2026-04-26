@@ -4,34 +4,74 @@ import { useAuth } from '../../hooks/useAuth';
 
 export default function AdminLayout({ children }) {
   const { kullanici, logout } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
+  const navigate  = useNavigate();
+  const location  = useLocation();
 
   const handleLogout = () => { logout(); navigate('/login'); };
 
-  const isActive = (path) => location.pathname.startsWith(path) ? 'sidebar-link active' : 'sidebar-link';
+  // Aktif link kontrolü
+  const isActive = (path) => {
+    if (path === '/admin' && location.pathname === '/admin') return true;
+    if (path !== '/admin' && location.pathname.startsWith(path)) return true;
+    return false;
+  };
+
+  // Kullanıcı baş harfleri avatar için
+  const initials = kullanici?.ad
+    ? kullanici.ad.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+    : 'A';
 
   return (
     <div className="admin-layout">
+
+      {/* ── Sidebar ── */}
       <aside className="sidebar">
-        <div className="sidebar-logo">📊 Anket Panel</div>
-        <Link to="/admin" className={isActive('/admin/surveys') || location.pathname === '/admin' ? 'sidebar-link active' : 'sidebar-link'}>
-          📋 Anketlerim
+
+        {/* Logo */}
+        <div className="sidebar-logo">
+          <div className="sidebar-logo-icon">📊</div>
+          <span className="sidebar-logo-text">Anket Panel</span>
+        </div>
+
+        {/* Navigasyon */}
+        <span className="sidebar-section-label">Menü</span>
+
+        <Link
+          to="/admin"
+          className={`sidebar-link ${isActive('/admin') ? 'active' : ''}`}
+        >
+          <span className="sidebar-link-icon">📋</span>
+          Anketlerim
         </Link>
-        <Link to="/admin/surveys/new" className={isActive('/admin/surveys/new') ? 'sidebar-link active' : 'sidebar-link'}>
-          ➕ Yeni Anket
+
+        <Link
+          to="/admin/surveys/new"
+          className={`sidebar-link ${isActive('/admin/surveys/new') ? 'active' : ''}`}
+        >
+          <span className="sidebar-link-icon">✚</span>
+          Yeni Anket
         </Link>
-        <div style={{ flex: 1 }} />
-        <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 16, marginTop: 16 }}>
-          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', padding: '0 12px', marginBottom: 8 }}>
-            {kullanici?.ad}
-          </p>
-          <button onClick={handleLogout} className="sidebar-link" style={{ background: 'none', border: 'none', cursor: 'pointer', width: '100%', textAlign: 'left' }}>
-            🚪 Çıkış Yap
+
+        {/* Alt kısım: kullanıcı + çıkış */}
+        <div className="sidebar-bottom">
+          <div className="sidebar-user">
+            <div className="sidebar-avatar">{initials}</div>
+            <div className="sidebar-user-info">
+              <div className="sidebar-user-name">{kullanici?.ad || 'Admin'}</div>
+              <div className="sidebar-user-role">Yönetici</div>
+            </div>
+          </div>
+          <button onClick={handleLogout} className="sidebar-link" style={{ color: 'var(--danger-600)' }}>
+            <span className="sidebar-link-icon">↩</span>
+            Çıkış Yap
           </button>
         </div>
       </aside>
-      <main className="admin-content">{children}</main>
+
+      {/* ── Ana İçerik ── */}
+      <main className="admin-content">
+        {children}
+      </main>
     </div>
   );
 }

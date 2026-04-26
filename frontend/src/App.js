@@ -11,41 +11,44 @@ import AdminSurveysPage from './pages/admin/AdminSurveysPage';
 import AdminCreateSurveyPage from './pages/admin/AdminCreateSurveyPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 
-// ── Route Guards ───────────────────────────────────────────────
+/* ── Route Guard: Sadece Admin ─────────────────────────────── */
 function AdminRoute({ children }) {
   const { kullanici, yukleniyor } = useAuth();
-  if (yukleniyor) return <div className="spinner" style={{ marginTop: 80 }} />;
+  if (yukleniyor) return <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: 'var(--bg-base)' }}><div className="spinner" /></div>;
   if (!kullanici) return <Navigate to="/login" replace />;
   if (kullanici.rol !== 'admin') return <Navigate to="/" replace />;
   return children;
 }
 
+/* ── Route Guard: Sadece Misafir ───────────────────────────── */
 function GuestRoute({ children }) {
   const { kullanici, yukleniyor } = useAuth();
-  if (yukleniyor) return <div className="spinner" style={{ marginTop: 80 }} />;
+  if (yukleniyor) return <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: 'var(--bg-base)' }}><div className="spinner" /></div>;
   if (kullanici) return <Navigate to={kullanici.rol === 'admin' ? '/admin' : '/'} replace />;
   return children;
 }
 
+/* ── BİZİM EKLEDİĞİMİZ HOMEROUTE (Sonsuz döngüyü önleyen kısım) ── */
 function HomeRoute() {
   const { kullanici, yukleniyor } = useAuth();
-  if (yukleniyor) return <div className="spinner" style={{ marginTop: 80 }} />;
+  if (yukleniyor) return <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: 'var(--bg-base)' }}><div className="spinner" /></div>;
   if (!kullanici) return <Navigate to="/login" replace />;
   if (kullanici.rol === 'admin') return <Navigate to="/admin" replace />;
-  
+
   return (
-    <div style={{ padding: '50px', textAlign: 'center', fontFamily: 'sans-serif' }}>
-      <h2>Hoş Geldiniz, {kullanici.isim || 'Kullanıcı'}! 🎉</h2>
-      <p>Kayıt işleminiz başarıyla tamamlandı.</p>
-      <p>Anketlere katılmak için size gönderilen özel linkleri kullanabilirsiniz.</p>
-      
-      <button 
-        onClick={() => { 
-          localStorage.clear(); 
-          sessionStorage.clear(); 
-          window.location.href = '/login'; 
+    <div style={{ padding: '50px', textAlign: 'center', background: 'var(--bg-base)', minHeight: '100vh' }}>
+      <h2 style={{ color: 'var(--text-primary)' }}>Hoş Geldiniz, {kullanici.isim || kullanici.ad || 'Kullanıcı'}! 🎉</h2>
+      <p style={{ color: 'var(--text-secondary)' }}>Kayıt işleminiz başarıyla tamamlandı.</p>
+      <p style={{ color: 'var(--text-secondary)' }}>Anketlere katılmak için size gönderilen özel linkleri kullanabilirsiniz.</p>
+
+      <button
+        onClick={() => {
+          localStorage.clear();
+          sessionStorage.clear();
+          window.location.href = '/login';
         }}
-        style={{ marginTop: '20px', padding: '10px 20px', cursor: 'pointer', backgroundColor: '#ff4d4f', color: 'white', border: 'none', borderRadius: '5px' }}
+        className="btn btn-danger"
+        style={{ marginTop: '20px' }}
       >
         Çıkış Yap
       </button>
@@ -53,23 +56,19 @@ function HomeRoute() {
   );
 }
 
-// ── App Routing ────────────────────────────────────────────────
+/* ── Router ────────────────────────────────────────────────── */
 function AppRoutes() {
   return (
     <Routes>
-      {/* Katılımcı - Anket Linki */}
       <Route path="/s/:token" element={<SurveyParticipantPage />} />
-
-      {/* Auth */}
       <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
       <Route path="/register" element={<GuestRoute><RegisterPage /></GuestRoute>} />
 
-      {/* Admin Panel */}
       <Route path="/admin" element={<AdminRoute><AdminSurveysPage /></AdminRoute>} />
       <Route path="/admin/surveys/new" element={<AdminRoute><AdminCreateSurveyPage /></AdminRoute>} />
       <Route path="/admin/surveys/:id/dashboard" element={<AdminRoute><AdminDashboardPage /></AdminRoute>} />
 
-      {/* Default */}
+      {/* Default yönlendirme artık güvenli! */}
       <Route path="/" element={<HomeRoute />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

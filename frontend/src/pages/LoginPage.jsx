@@ -4,9 +4,9 @@ import { useAuth } from '../hooks/useAuth';
 
 export default function LoginPage() {
   const { login } = useAuth();
-  const navigate = useNavigate();
-  const [form, setForm] = useState({ eposta: '', sifre: '' });
-  const [hata, setHata] = useState('');
+  const navigate  = useNavigate();
+  const [form, setForm]           = useState({ eposta: '', sifre: '' });
+  const [hata, setHata]           = useState('');
   const [yukleniyor, setYukleniyor] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -17,26 +17,33 @@ export default function LoginPage() {
       const kullanici = await login(form.eposta, form.sifre);
       navigate(kullanici.rol === 'admin' ? '/admin' : '/');
     } catch (err) {
-      setHata(err.response?.data?.error || 'Giriş başarısız.');
+      setHata(err.response?.data?.error || 'E-posta veya şifre hatalı.');
     } finally {
       setYukleniyor(false);
     }
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-      <div className="card" style={{ width: '100%', maxWidth: 420 }}>
-        <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{ fontSize: '2.5rem', marginBottom: 8 }}>📊</div>
-          <h1 style={{ fontSize: '1.6rem', fontWeight: 800 }}>Anket Platformu</h1>
-          <p style={{ color: 'var(--text-muted)', marginTop: 4 }}>Hesabınıza giriş yapın</p>
+    <div className="auth-layout">
+      <div className="auth-card">
+
+        {/* Logo */}
+        <div className="auth-logo">
+          <div className="auth-logo-icon">📊</div>
+          <span className="auth-logo-text">Anket Platform</span>
         </div>
 
+        {/* Başlık */}
+        <h1 className="auth-heading">Tekrar hoş geldiniz</h1>
+        <p className="auth-subheading">Hesabınıza giriş yaparak devam edin.</p>
+
+        {/* Hata */}
         {hata && <div className="alert alert-error">{hata}</div>}
 
+        {/* Form */}
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label className="form-label">E-posta</label>
+            <label className="form-label">E-posta adresi</label>
             <input
               type="email"
               className="form-input"
@@ -44,8 +51,10 @@ export default function LoginPage() {
               value={form.eposta}
               onChange={e => setForm({ ...form, eposta: e.target.value })}
               required
+              autoComplete="email"
             />
           </div>
+
           <div className="form-group">
             <label className="form-label">Şifre</label>
             <input
@@ -55,17 +64,24 @@ export default function LoginPage() {
               value={form.sifre}
               onChange={e => setForm({ ...form, sifre: e.target.value })}
               required
+              autoComplete="current-password"
             />
           </div>
-          <button type="submit" className="btn btn-primary btn-full" disabled={yukleniyor}>
-            {yukleniyor ? 'Giriş yapılıyor...' : 'Giriş Yap'}
+
+          <button
+            type="submit"
+            className={`btn btn-primary btn-pill btn-full ${yukleniyor ? 'btn-loading' : ''}`}
+            disabled={yukleniyor}
+          >
+            <span>{yukleniyor ? 'Giriş yapılıyor...' : 'Giriş Yap'}</span>
           </button>
         </form>
 
-        <p style={{ textAlign: 'center', marginTop: 20, color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+        {/* Alt bağlantı */}
+        <div className="auth-footer">
           Hesabınız yok mu?{' '}
-          <Link to="/register" style={{ color: 'var(--primary)', fontWeight: 600 }}>Kayıt Ol</Link>
-        </p>
+          <Link to="/register">Kayıt olun</Link>
+        </div>
       </div>
     </div>
   );
