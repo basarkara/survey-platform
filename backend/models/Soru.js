@@ -20,7 +20,7 @@ const Soru = sequelize.define('Sorular', {
     type: DataTypes.STRING(50),
     allowNull: false,
     validate: {
-      isIn: [['star', 'boolean', 'scale', 'multiple_choice', 'text']],
+      isIn: [['star', 'boolean', 'scale', 'multiple_choice', 'multi_select', 'text']],
     },
   },
   zorunlu: {
@@ -35,7 +35,7 @@ const Soru = sequelize.define('Sorular', {
   },
   secenekler: {
     type: DataTypes.JSONB, // PostgreSQL JSONB - performanslı JSON
-    allowNull: true,       // Nullable - sadece multiple_choice için
+    allowNull: true,       // Nullable - seçenekli soru tipleri için
   },
 }, {
   tableName: 'Sorular',

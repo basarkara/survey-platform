@@ -42,14 +42,19 @@ export const adminAPI = {
   getSurveys: () => api.get('/admin/surveys'),
   getSurveyById: (id) => api.get(`/admin/surveys/${id}`),
   getDashboard: (id) => api.get(`/admin/surveys/${id}/dashboard`),
+  exportResponses: (id) => api.get(`/admin/surveys/${id}/export`, { responseType: 'blob' }),
   updateSurvey: (id, data) => api.put(`/admin/surveys/${id}`, data),
   deleteSurvey: (id) => api.delete(`/admin/surveys/${id}`),
 };
 
 // ── PUBLIC ────────────────────────────────────────────────────
 export const publicAPI = {
-  getSurveyByToken: (token) => api.get(`/public/surveys/share/${token}`),
-  startSurvey: (token) => api.post(`/public/surveys/start/${token}`),
+  getSurveyByToken: (token, options = {}) => api.get(`/public/surveys/share/${token}`, {
+    params: options.kiosk ? { kiosk: '1' } : undefined,
+  }),
+  startSurvey: (token, options = {}) => api.post(`/public/surveys/start/${token}`, {
+    kiosk: !!options.kiosk,
+  }),
   submitResponse: (data) => api.post('/public/responses/submit', data),
 };
 

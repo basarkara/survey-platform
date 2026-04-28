@@ -9,6 +9,7 @@ const adminRoutes = require('./routes/admin');
 const publicRoutes = require('./routes/public');
 
 const app = express();
+app.set('trust proxy', 1);
 
 // ============================================================
 // MIDDLEWARE

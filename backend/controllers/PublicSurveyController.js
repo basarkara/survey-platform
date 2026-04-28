@@ -1,4 +1,5 @@
 const { Op } = require('sequelize');
+const crypto = require('crypto');
 const { Anket, Soru, AnketYaniti, Cevap, sequelize } = require('../models');
 const { getClientIP } = require('../middleware/auth');
 
@@ -8,6 +9,7 @@ const { getClientIP } = require('../middleware/auth');
 const getSurveyByToken = async (req, res) => {
   try {
     const { token } = req.params;
+    const kioskMode = req.query.kiosk === '1';
 
     const anket = await Anket.findOne({
       where: { paylasim_token: token },
@@ -54,7 +56,7 @@ const getSurveyByToken = async (req, res) => {
 
     // IP ile mükerrer tamamlanmış katılım kontrolü
     const ipAdresi = getClientIP(req);
-    const mevcutTamamlanmis = await AnketYaniti.findOne({
+    const mevcutTamamlanmis = kioskMode ? null : await AnketYaniti.findOne({
       where: {
         anket_id: anket.id,
         ip_adresi: ipAdresi,
@@ -86,6 +88,7 @@ const startSurvey = async (req, res) => {
   try {
     const { token } = req.params;
     const ipAdresi = getClientIP(req);
+    const kioskMode = req.body?.kiosk === true || req.query.kiosk === '1';
 
     const anket = await Anket.findOne({ where: { paylasim_token: token } });
     if (!anket) return res.status(404).json({ error: 'Anket bulunamadı.' });
@@ -105,18 +108,20 @@ const startSurvey = async (req, res) => {
     }
 
     // Tamamlanmış mükerrer katılım kontrolü
-    const mevcutTamamlanmis = await AnketYaniti.findOne({
+    const mevcutTamamlanmis = kioskMode ? null : await AnketYaniti.findOne({
       where: { anket_id: anket.id, ip_adresi: ipAdresi, bitis_tarihi: { [Op.ne]: null } },
     });
-    if (mevcutTamamlanmis) {
+    if (!kioskMode && mevcutTamamlanmis) {
       return res.status(409).json({ error: 'Bu ankete daha önce katıldınız.', kod: 'MUKERRER_KATILIM' });
     }
+
+    const oturumIpAdresi = kioskMode ? createKioskSessionAddress() : ipAdresi;
 
     // Yeni oturum başlat (bitis_tarihi null = henüz tamamlanmamış)
     const yanit = await AnketYaniti.create({
       anket_id: anket.id,
       kullanici_id: req.kullanici?.id || null, // Opsiyonel JWT
-      ip_adresi: ipAdresi,
+      ip_adresi: oturumIpAdresi,
       baslangic_tarihi: new Date(),
       bitis_tarihi: null,
     });
@@ -143,11 +148,11 @@ const submitResponse = async (req, res) => {
 
     // Yanıt oturumu doğrula
     const yanit = await AnketYaniti.findOne({
-      where: { id: yanit_id, anket_id, ip_adresi: ipAdresi },
+      where: { id: yanit_id, anket_id },
       transaction: t,
     });
 
-    if (!yanit) {
+    if (!yanit || (!isKioskSession(yanit.ip_adresi) && yanit.ip_adresi !== ipAdresi)) {
       await t.rollback();
       return res.status(404).json({ error: 'Geçersiz yanıt oturumu.' });
     }
@@ -219,5 +224,13 @@ const submitResponse = async (req, res) => {
     res.status(500).json({ error: 'Cevaplar kaydedilemedi.' });
   }
 };
+
+function createKioskSessionAddress() {
+  return `kiosk:${crypto.randomBytes(16).toString('hex')}`;
+}
+
+function isKioskSession(ipAdresi) {
+  return typeof ipAdresi === 'string' && ipAdresi.startsWith('kiosk:');
+}
 
 module.exports = { getSurveyByToken, startSurvey, submitResponse };

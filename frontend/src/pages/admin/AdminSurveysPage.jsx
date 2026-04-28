@@ -40,6 +40,33 @@ export default function AdminSurveysPage() {
     /* Basit feedback: buton metni değişir */
   };
 
+  const copyCode = (token, e) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(token);
+  };
+
+  const openKioskMode = (token, e) => {
+    e.stopPropagation();
+    navigate(`/kiosk/${token}`);
+  };
+
+  const exportResponses = async (anket, e) => {
+    e.stopPropagation();
+    try {
+      const res = await adminAPI.exportResponses(anket.id);
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'text/csv;charset=utf-8' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${slugify(anket.baslik || `anket-${anket.id}`)}-cevaplar.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      alert(await getExportErrorMessage(err));
+    }
+  };
+
   return (
     <AdminLayout>
 
@@ -90,10 +117,16 @@ export default function AdminSurveysPage() {
               {/* Başlık & açıklama */}
               <div>
                 <div className="survey-card-title">{anket.baslik}</div>
-                {anket.aciklama && (
-                  <p className="survey-card-desc" style={{ marginTop: 6 }}>{anket.aciklama}</p>
-                )}
+              {anket.aciklama && (
+                <p className="survey-card-desc" style={{ marginTop: 6 }}>{anket.aciklama}</p>
+              )}
+              <div style={{ marginTop: 12, padding: '10px 12px', background: 'var(--bg)', borderRadius: 8 }}>
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 700, marginBottom: 4 }}>
+                  Anket Kodu
+                </div>
+                <code style={{ fontSize: '0.78rem', wordBreak: 'break-all' }}>{anket.paylasim_token}</code>
               </div>
+            </div>
 
               {/* İstatistikler */}
               <div className="survey-card-stats">
@@ -122,10 +155,28 @@ export default function AdminSurveysPage() {
                   🔗 Linki Kopyala
                 </button>
                 <button
+                  className="btn btn-ghost btn-sm"
+                  onClick={e => copyCode(anket.paylasim_token, e)}
+                >
+                  # Kodu Kopyala
+                </button>
+                <button
                   className="btn btn-outline btn-sm"
                   onClick={e => { e.stopPropagation(); navigate(`/admin/surveys/${anket.id}/dashboard`); }}
                 >
                   📊 Dashboard
+                </button>
+                <button
+                  className="btn btn-outline btn-sm"
+                  onClick={e => openKioskMode(anket.paylasim_token, e)}
+                >
+                  🖥 Kiosk Modu
+                </button>
+                <button
+                  className="btn btn-outline btn-sm"
+                  onClick={e => exportResponses(anket, e)}
+                >
+                  ⬇ Cevapları Dışa Aktar
                 </button>
               </div>
             </div>
@@ -134,4 +185,30 @@ export default function AdminSurveysPage() {
       )}
     </AdminLayout>
   );
+}
+
+function slugify(value) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9-_]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .toLowerCase() || 'anket';
+}
+
+async function getExportErrorMessage(err) {
+  const fallback = 'Cevaplar dışa aktarılamadı.';
+  const data = err.response?.data;
+
+  if (data instanceof Blob) {
+    try {
+      const text = await data.text();
+      const parsed = JSON.parse(text);
+      return parsed.error || fallback;
+    } catch {
+      return fallback;
+    }
+  }
+
+  return data?.error || fallback;
 }

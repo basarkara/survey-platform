@@ -53,10 +53,10 @@ CREATE TABLE IF NOT EXISTS "Sorular" (
   "id"          SERIAL        PRIMARY KEY,
   "anket_id"    INTEGER       NOT NULL REFERENCES "Anketler"("id") ON DELETE CASCADE,
   "soru_metni"  TEXT          NOT NULL,
-  "soru_tipi"   VARCHAR(50)   NOT NULL, -- 'star', 'boolean', 'scale', 'multiple_choice', 'text'
+  "soru_tipi"   VARCHAR(50)   NOT NULL, -- 'star', 'boolean', 'scale', 'multiple_choice', 'multi_select', 'text'
   "zorunlu"     BOOLEAN       NOT NULL DEFAULT false,
   "sira_no"     INTEGER       NOT NULL DEFAULT 1,
-  "secenekler"  JSONB,                  -- Nullable - Sadece multiple_choice için kullanılır
+  "secenekler"  JSONB,                  -- Nullable - Seçenekli soru tipleri için kullanılır
   "createdAt"   TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   "updatedAt"   TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );

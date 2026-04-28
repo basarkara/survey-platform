@@ -8,8 +8,11 @@ const SORU_TIPLERI = [
   { value: 'boolean', label: '✓✗ Evet / Hayır' },
   { value: 'scale', label: '📊 Ölçek (1-10)' },
   { value: 'multiple_choice', label: '☑️ Çoktan Seçmeli' },
+  { value: 'multi_select', label: '✅ Birden Fazla Seçim' },
   { value: 'text', label: '📝 Açık Uçlu Metin' },
 ];
+
+const secenekliSoruMu = (soruTipi) => ['multiple_choice', 'multi_select'].includes(soruTipi);
 
 const boshSoru = () => ({
   tempId: Date.now(),
@@ -56,8 +59,8 @@ export default function AdminCreateSurveyPage() {
 
     for (const s of sorular) {
       if (!s.soru_metni.trim()) { setHata('Tüm soruların metni dolu olmalıdır.'); return; }
-      if (s.soru_tipi === 'multiple_choice' && s.secenekler.length < 2) {
-        setHata('Çoktan seçmeli sorular için en az 2 seçenek ekleyin.'); return;
+      if (secenekliSoruMu(s.soru_tipi) && s.secenekler.length < 2) {
+        setHata('Seçenekli sorular için en az 2 seçenek ekleyin.'); return;
       }
     }
 
@@ -73,7 +76,7 @@ export default function AdminCreateSurveyPage() {
           soru_tipi: s.soru_tipi,
           zorunlu: s.zorunlu,
           sira_no: idx + 1,
-          secenekler: s.soru_tipi === 'multiple_choice' ? s.secenekler : null,
+          secenekler: secenekliSoruMu(s.soru_tipi) ? s.secenekler : null,
         })),
       };
       const res = await adminAPI.createSurvey(payload);
@@ -89,6 +92,13 @@ export default function AdminCreateSurveyPage() {
     <AdminLayout>
       <div className="page-header">
         <h1 className="page-title">➕ Yeni Anket Oluştur</h1>
+        <button
+          type="button"
+          className="btn btn-outline"
+          onClick={() => navigate('/')}
+        >
+          Anasayfa'ya Dön
+        </button>
       </div>
 
       {hata && <div className="alert alert-error">{hata}</div>}
@@ -156,8 +166,8 @@ export default function AdminCreateSurveyPage() {
               </div>
             </div>
 
-            {/* Çoktan seçmeli seçenekler */}
-            {soru.soru_tipi === 'multiple_choice' && (
+            {/* Seçenekli soru seçenekleri */}
+            {secenekliSoruMu(soru.soru_tipi) && (
               <div>
                 <label className="form-label">Seçenekler (en az 2)</label>
                 <div className="choice-list" style={{ marginBottom: 12 }}>

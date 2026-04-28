@@ -80,6 +80,33 @@ function MultipleChoiceQuestion({ secenekler, value, onChange }) {
   );
 }
 
+function MultiSelectQuestion({ secenekler, value, onChange }) {
+  const list = Array.isArray(secenekler) ? secenekler : [];
+  const selected = Array.isArray(value) ? value : [];
+  const toggle = (opt) => {
+    const next = selected.includes(opt) ? selected.filter(s => s !== opt) : [...selected, opt];
+    onChange(next);
+  };
+
+  return (
+    <div className="choice-list">
+      {list.map((opt, i) => {
+        const checked = selected.includes(opt);
+        return (
+          <label key={i} className={`checkbox-choice ${checked ? 'selected' : ''}`}>
+            <input
+              type="checkbox"
+              checked={checked}
+              onChange={() => toggle(opt)}
+            />
+            <span>{opt}</span>
+          </label>
+        );
+      })}
+    </div>
+  );
+}
+
 function TextQuestion({ value, onChange }) {
   return (
     <textarea
@@ -94,10 +121,11 @@ function TextQuestion({ value, onChange }) {
 
 // ── Ana Sayfa ─────────────────────────────────────────────────
 
-export default function SurveyParticipantPage() {
+export default function SurveyParticipantPage({ kioskMode = false }) {
   const { token } = useParams();
   const navigate = useNavigate();
 
+  const [resetKey, setResetKey] = useState(0);
   const [anket, setAnket] = useState(null);
   const [soruIndex, setSoruIndex] = useState(0);
   const [cevaplar, setCevaplar] = useState({});     // { soru_id: value }
@@ -112,7 +140,16 @@ export default function SurveyParticipantPage() {
   useEffect(() => {
     const yukle = async () => {
       try {
-        const res = await publicAPI.getSurveyByToken(token);
+        setYukleniyor(true);
+        setAnket(null);
+        setSoruIndex(0);
+        setCevaplar({});
+        setYanitId(null);
+        setHata('');
+        setBitti(false);
+        setZorunluHata(false);
+
+        const res = await publicAPI.getSurveyByToken(token, { kiosk: kioskMode });
         if (res.data.katilimci_durumu?.daha_once_katildi) {
           setHata('Bu ankete daha önce katıldınız. Teşekkürler!');
           setYukleniyor(false);
@@ -121,7 +158,7 @@ export default function SurveyParticipantPage() {
         setAnket(res.data.anket);
 
         // Oturum başlat
-        const startRes = await publicAPI.startSurvey(token);
+        const startRes = await publicAPI.startSurvey(token, { kiosk: kioskMode });
         setYanitId(startRes.data.yanit_id);
       } catch (err) {
         const kod = err.response?.data?.kod;
@@ -134,7 +171,17 @@ export default function SurveyParticipantPage() {
       }
     };
     yukle();
-  }, [token]);
+  }, [token, kioskMode, resetKey]);
+
+  useEffect(() => {
+    if (!kioskMode || !bitti) return undefined;
+
+    const timer = setTimeout(() => {
+      setResetKey((key) => key + 1);
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, [bitti, kioskMode]);
 
   if (yukleniyor) return <div className="participant-screen"><div className="spinner" /></div>;
   if (hata) return (
@@ -142,6 +189,14 @@ export default function SurveyParticipantPage() {
       <div className="card">
         <div style={{ fontSize: '3rem', marginBottom: 16 }}>ℹ️</div>
         <p style={{ fontSize: '1.1rem', fontWeight: 600 }}>{hata}</p>
+        <button
+          type="button"
+          className="btn btn-primary"
+          style={{ marginTop: 20 }}
+          onClick={() => navigate('/')}
+        >
+          Anasayfa'ya Dön
+        </button>
       </div>
     </div>
   );
@@ -151,6 +206,29 @@ export default function SurveyParticipantPage() {
         <div style={{ fontSize: '3.5rem', marginBottom: 16 }}>🎉</div>
         <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: 8 }}>Teşekkürler!</h2>
         <p style={{ color: 'var(--text-muted)' }}>Cevaplarınız başarıyla kaydedildi.</p>
+        {kioskMode && (
+          <p style={{ color: 'var(--text-muted)', marginTop: 10 }}>
+            Kiosk modu 5 saniye içinde yeni katılımcı için başa dönecek.
+          </p>
+        )}
+        {kioskMode && (
+          <button
+            type="button"
+            className="btn btn-outline"
+            style={{ marginTop: 20, marginRight: 10 }}
+            onClick={() => setResetKey((key) => key + 1)}
+          >
+            Yeni Katılımcı Başlat
+          </button>
+        )}
+        <button
+          type="button"
+          className="btn btn-primary"
+          style={{ marginTop: 20 }}
+          onClick={() => navigate('/')}
+        >
+          Anasayfa'ya Dön
+        </button>
       </div>
     </div>
   );
@@ -168,7 +246,9 @@ export default function SurveyParticipantPage() {
 
   const cevapVerildiMi = () => {
     if (mevcutCevap === undefined || mevcutCevap === null) return false;
-    if (mevcutSoru.soru_tipi === 'multiple_choice') return Array.isArray(mevcutCevap) && mevcutCevap.length > 0;
+    if (['multiple_choice', 'multi_select'].includes(mevcutSoru.soru_tipi)) {
+      return Array.isArray(mevcutCevap) && mevcutCevap.length > 0;
+    }
     if (mevcutSoru.soru_tipi === 'text') return mevcutCevap.trim().length > 0;
     return true;
   };
@@ -200,7 +280,7 @@ export default function SurveyParticipantPage() {
       const cevapListesi = Object.entries(cevaplar).map(([soru_id, val]) => {
         const soru = sorular.find(s => s.id === parseInt(soru_id));
         let cevap_verisi;
-        if (soru?.soru_tipi === 'multiple_choice') cevap_verisi = { selected: val };
+        if (['multiple_choice', 'multi_select'].includes(soru?.soru_tipi)) cevap_verisi = { selected: val };
         else if (soru?.soru_tipi === 'text') cevap_verisi = { text: val };
         else cevap_verisi = { value: val };
         return { soru_id: parseInt(soru_id), cevap_verisi };
@@ -225,6 +305,7 @@ export default function SurveyParticipantPage() {
       case 'boolean': return <BooleanQuestion value={mevcutCevap} onChange={cevapGuncelle} />;
       case 'scale': return <ScaleQuestion value={mevcutCevap} onChange={cevapGuncelle} />;
       case 'multiple_choice': return <MultipleChoiceQuestion secenekler={mevcutSoru.secenekler} value={mevcutCevap} onChange={cevapGuncelle} />;
+      case 'multi_select': return <MultiSelectQuestion secenekler={mevcutSoru.secenekler} value={mevcutCevap} onChange={cevapGuncelle} />;
       case 'text': return <TextQuestion value={mevcutCevap} onChange={cevapGuncelle} />;
       default: return <p>Bilinmeyen soru tipi: {mevcutSoru.soru_tipi}</p>;
     }
@@ -234,7 +315,21 @@ export default function SurveyParticipantPage() {
     <div className="participant-screen">
       {/* Header */}
       <div style={{ paddingTop: 24 }}>
-        <h2 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-muted)' }}>{anket.baslik}</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+          <div>
+            <h2 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-muted)', margin: 0 }}>{anket.baslik}</h2>
+            {kioskMode && (
+              <span className="badge badge-purple" style={{ marginTop: 8 }}>Kiosk Modu</span>
+            )}
+          </div>
+          <button
+            type="button"
+            className="btn btn-outline btn-sm"
+            onClick={() => navigate('/')}
+          >
+            Anasayfa'ya Dön
+          </button>
+        </div>
         <div className="progress-bar-wrap">
           <div className="progress-bar-fill" style={{ width: `${ilerleme}%` }} />
         </div>

@@ -20,6 +20,7 @@ export default function AdminLayout({ children }) {
   const initials = kullanici?.ad
     ? kullanici.ad.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
     : 'A';
+  const roleLabel = kullanici?.rol === 'admin' ? 'Yönetici' : 'Kullanıcı';
 
   return (
     <div className="admin-layout">
@@ -35,6 +36,14 @@ export default function AdminLayout({ children }) {
 
         {/* Navigasyon */}
         <span className="sidebar-section-label">Menü</span>
+
+        <Link
+          to="/"
+          className={`sidebar-link ${location.pathname === '/' ? 'active' : ''}`}
+        >
+          <span className="sidebar-link-icon">⌂</span>
+          Anasayfa
+        </Link>
 
         <Link
           to="/admin"
@@ -58,7 +67,7 @@ export default function AdminLayout({ children }) {
             <div className="sidebar-avatar">{initials}</div>
             <div className="sidebar-user-info">
               <div className="sidebar-user-name">{kullanici?.ad || 'Admin'}</div>
-              <div className="sidebar-user-role">Yönetici</div>
+              <div className="sidebar-user-role">{roleLabel}</div>
             </div>
           </div>
           <button onClick={handleLogout} className="sidebar-link" style={{ color: 'var(--danger-600)' }}>

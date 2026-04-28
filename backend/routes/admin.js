@@ -6,12 +6,14 @@ const {
   getSurveyById,
   getDashboard,
   updateSurvey,
+  exportSurveyResponses,
   deleteSurvey,
 } = require('../controllers/AdminSurveyController');
-const { authenticate, adminOnly } = require('../middleware/auth');
+const { authenticate } = require('../middleware/auth');
 
-// Tüm admin route'ları JWT + admin yetkisi gerektirir
-router.use(authenticate, adminOnly);
+// Anket yönetimi giriş yapmış tüm kullanıcılar için açıktır.
+// Controller katmanında her kullanıcı yalnızca kendi anketlerini görür/yönetir.
+router.use(authenticate);
 
 // POST /api/admin/surveys - Anket oluştur
 router.post('/surveys', createSurvey);
@@ -19,8 +21,8 @@ router.post('/surveys', createSurvey);
 // GET /api/admin/surveys - Anketleri listele
 router.get('/surveys', getSurveys);
 
-// GET /api/admin/surveys/:id - Anket detayı
-router.get('/surveys/:id', getSurveyById);
+// GET /api/admin/surveys/:id/export - Cevapları CSV olarak dışa aktar
+router.get('/surveys/:id/export', exportSurveyResponses);
 
 // GET /api/admin/surveys/:id/dashboard - Dashboard verisi
 router.get('/surveys/:id/dashboard', getDashboard);
@@ -30,5 +32,8 @@ router.put('/surveys/:id', updateSurvey);
 
 // DELETE /api/admin/surveys/:id - Anket sil
 router.delete('/surveys/:id', deleteSurvey);
+
+// GET /api/admin/surveys/:id - Anket detayı
+router.get('/surveys/:id', getSurveyById);
 
 module.exports = router;

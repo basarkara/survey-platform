@@ -22,7 +22,7 @@ const Cevap = sequelize.define('Cevaplar', {
     allowNull: false,
     // Örnek: { "value": 4 } (star/scale için)
     // Örnek: { "value": true } (boolean için)
-    // Örnek: { "selected": ["Seçenek A", "Seçenek C"] } (multiple_choice için)
+    // Örnek: { "selected": ["Seçenek A", "Seçenek C"] } (multiple_choice/multi_select için)
     // Örnek: { "text": "Cevap metni" } (text için)
   },
 }, {

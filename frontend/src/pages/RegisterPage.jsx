@@ -1,100 +1,145 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { authAPI } from '../services/api';
 
-export default function RegisterPage() {
+const Register = () => {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const navigate = useNavigate();
-  const [form, setForm]           = useState({ ad: '', eposta: '', sifre: '' });
-  const [hata, setHata]           = useState('');
-  const [yukleniyor, setYukleniyor] = useState(false);
 
-  const handleSubmit = async (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
-    setHata('');
-    if (form.sifre.length < 8) {
-      setHata('Şifre en az 8 karakter olmalıdır.');
+    
+    if (password !== confirmPassword) {
+      alert("Şifreler birbiriyle eşleşmiyor!");
       return;
     }
-    setYukleniyor(true);
+
     try {
-      await authAPI.register(form);
-      navigate('/login', { state: { mesaj: 'Kayıt başarılı! Giriş yapabilirsiniz.' } });
-    } catch (err) {
-      setHata(err.response?.data?.error || 'Kayıt başarısız.');
-    } finally {
-      setYukleniyor(false);
+      await authAPI.register({ ad: name, eposta: email, sifre: password });
+      alert("Kayıt başarılı! Şimdi giriş yapabilirsiniz.");
+      navigate('/login'); // Kayıt sonrası giriş ekranına yönlendir
+    } catch (error) {
+      console.error("Kayıt hatası:", error);
+      alert(error.response?.data?.error || "Kayıt sırasında bir hata oluştu.");
     }
   };
 
   return (
-    <div className="auth-layout">
-      <div className="auth-card">
-
-        <div className="auth-logo">
-          <div className="auth-logo-icon">📊</div>
-          <span className="auth-logo-text">Anket Platform</span>
+    <div className="min-h-screen bg-brand-bg flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="flex justify-center text-brand-primary mb-2">
+          {/* Pollify Logo İkonu */}
+          <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
+          </svg>
         </div>
+        <h2 className="mt-2 text-center text-3xl font-extrabold text-brand-dark tracking-tight">
+          Pollify'a Katılın
+        </h2>
+        <p className="mt-2 text-center text-sm text-gray-600">
+          Hemen hesap oluşturun ve anketlere katılmaya başlayın
+        </p>
+      </div>
 
-        <h1 className="auth-heading">Hesap oluşturun</h1>
-        <p className="auth-subheading">Birkaç adımda ankete katılmaya hazır olun.</p>
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="bg-white py-8 px-4 shadow-sm border border-gray-100 sm:rounded-xl sm:px-10">
+          <form className="space-y-5" onSubmit={handleRegister}>
+            {/* Ad Soyad Alanı */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Ad Soyad
+              </label>
+              <div className="mt-1">
+                <input
+                  type="text"
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-brand-primary focus:border-brand-primary sm:text-sm"
+                  placeholder="Ahmet Yılmaz"
+                />
+              </div>
+            </div>
 
-        {hata && <div className="alert alert-error">{hata}</div>}
+            {/* E-posta Alanı */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                E-posta adresi
+              </label>
+              <div className="mt-1">
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-brand-primary focus:border-brand-primary sm:text-sm"
+                  placeholder="ornek@mail.com"
+                />
+              </div>
+            </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label className="form-label">Adınız Soyadınız</label>
-            <input
-              type="text"
-              className="form-input"
-              placeholder="Ad Soyad"
-              value={form.ad}
-              onChange={e => setForm({ ...form, ad: e.target.value })}
-              required
-              autoComplete="name"
-            />
+            {/* Şifre Alanı */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Şifre
+              </label>
+              <div className="mt-1">
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-brand-primary focus:border-brand-primary sm:text-sm"
+                  placeholder="••••••••"
+                />
+              </div>
+            </div>
+
+            {/* Şifre Tekrar Alanı */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Şifreyi Onayla
+              </label>
+              <div className="mt-1">
+                <input
+                  type="password"
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-brand-primary focus:border-brand-primary sm:text-sm"
+                  placeholder="••••••••"
+                />
+              </div>
+            </div>
+
+            <div>
+              <button
+                type="submit"
+                className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-brand-primary hover:bg-brand-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary transition-colors"
+              >
+                Hesap Oluştur
+              </button>
+            </div>
+          </form>
+
+          <div className="mt-6 text-center">
+            <p className="text-sm text-gray-600">
+              Zaten hesabınız var mı?{' '}
+              <Link to="/login" className="font-medium text-brand-primary hover:text-brand-primary/80">
+                Giriş yapın
+              </Link>
+            </p>
+            <Link to="/" className="mt-3 inline-block text-sm font-medium text-gray-500 hover:text-brand-primary">
+              Anasayfa'ya Dön
+            </Link>
           </div>
-
-          <div className="form-group">
-            <label className="form-label">E-posta adresi</label>
-            <input
-              type="email"
-              className="form-input"
-              placeholder="ornek@mail.com"
-              value={form.eposta}
-              onChange={e => setForm({ ...form, eposta: e.target.value })}
-              required
-              autoComplete="email"
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Şifre</label>
-            <input
-              type="password"
-              className="form-input"
-              placeholder="En az 8 karakter"
-              value={form.sifre}
-              onChange={e => setForm({ ...form, sifre: e.target.value })}
-              required
-              autoComplete="new-password"
-            />
-            <span className="form-hint">En az 8 karakter kullanınız.</span>
-          </div>
-
-          <button
-            type="submit"
-            className={`btn btn-primary btn-pill btn-full ${yukleniyor ? 'btn-loading' : ''}`}
-            disabled={yukleniyor}
-          >
-            <span>{yukleniyor ? 'Kaydediliyor...' : 'Hesap Oluştur'}</span>
-          </button>
-        </form>
-
-        <div className="auth-footer">
-          Zaten hesabınız var mı?{' '}
-          <Link to="/login">Giriş yapın</Link>
         </div>
       </div>
     </div>
   );
-}
+};
+
+export default Register;

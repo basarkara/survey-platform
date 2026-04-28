@@ -14,6 +14,52 @@ ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale,
 
 const RENKLER = ['#6C63FF', '#FF6584', '#43C59E', '#FFB347', '#4ECDC4', '#A8E6CF', '#FF8B94', '#B4A7D6'];
 
+function formatGunEtiketi(tarih) {
+  return new Date(tarih).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
+}
+
+function SecenekTrendGrafik({ trend }) {
+  if (!trend?.seriler?.length || !trend?.gunler?.length) return null;
+
+  const data = {
+    labels: trend.gunler.map(gun => formatGunEtiketi(gun.tarih)),
+    datasets: trend.seriler.map((seri, index) => ({
+      label: `${seri.secenek} (%)`,
+      data: seri.oranlar,
+      borderColor: RENKLER[index % RENKLER.length],
+      backgroundColor: `${RENKLER[index % RENKLER.length]}22`,
+      tension: 0.35,
+      pointRadius: 3,
+      borderWidth: 2,
+    })),
+  };
+
+  return (
+    <div style={{ marginTop: 22 }}>
+      <h4 style={{ fontSize: '0.92rem', fontWeight: 800, marginBottom: 6 }}>
+        Zaman İçinde Seçilme Oranı
+      </h4>
+      <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginBottom: 12 }}>
+        Her gün için seçeneklerin o gün cevap verenler içindeki yüzdesi.
+      </p>
+      <Line
+        data={data}
+        options={{
+          responsive: true,
+          plugins: { legend: { position: 'bottom' } },
+          scales: {
+            y: {
+              beginAtZero: true,
+              max: 100,
+              ticks: { callback: value => `${value}%` },
+            },
+          },
+        }}
+      />
+    </div>
+  );
+}
+
 // ── Soru istatistik bileşeni ───────────────────────────────────
 function SoruGrafik({ istat }) {
   if (!istat.istatistik || Object.keys(istat.istatistik).length === 0)
@@ -42,26 +88,32 @@ function SoruGrafik({ istat }) {
 
   if (soru_tipi === 'boolean') {
     return (
-      <Pie
-        data={{
-          labels: ['Evet', 'Hayır'],
-          datasets: [{ data: [istatistik.evet, istatistik.hayir], backgroundColor: ['#43C59E', '#FF6584'], borderWidth: 2 }],
-        }}
-        options={{ responsive: true, plugins: { legend: { position: 'bottom' } } }}
-      />
+      <>
+        <Pie
+          data={{
+            labels: ['Evet', 'Hayır'],
+            datasets: [{ data: [istatistik.evet, istatistik.hayir], backgroundColor: ['#43C59E', '#FF6584'], borderWidth: 2 }],
+          }}
+          options={{ responsive: true, plugins: { legend: { position: 'bottom' } } }}
+        />
+        <SecenekTrendGrafik trend={istat.zaman_trendi} />
+      </>
     );
   }
 
-  if (soru_tipi === 'multiple_choice') {
+  if (soru_tipi === 'multiple_choice' || soru_tipi === 'multi_select') {
     const items = istatistik.dagilim || [];
     return (
-      <Pie
-        data={{
-          labels: items.map(i => `${i.secenek} (${i.yuzde}%)`),
-          datasets: [{ data: items.map(i => i.sayi), backgroundColor: RENKLER, borderWidth: 2 }],
-        }}
-        options={{ responsive: true, plugins: { legend: { position: 'bottom' } } }}
-      />
+      <>
+        <Pie
+          data={{
+            labels: items.map(i => `${i.secenek} (${i.yuzde}%)`),
+            datasets: [{ data: items.map(i => i.sayi), backgroundColor: RENKLER, borderWidth: 2 }],
+          }}
+          options={{ responsive: true, plugins: { legend: { position: 'bottom' } } }}
+        />
+        <SecenekTrendGrafik trend={istat.zaman_trendi} />
+      </>
     );
   }
 
@@ -112,9 +164,12 @@ export default function AdminDashboardPage() {
 
   const { anket, ozet, soru_istatistikleri, zaman_serisi } = data;
 
-  // Çizgi grafik verisi (son 30 gün)
+  const toplamYayinGunu = zaman_serisi.length;
+  const aktifKatilimGunu = zaman_serisi.filter(z => Number(z.katilim_sayisi) > 0).length;
+
+  // Çizgi grafik verisi (anketin yayında kaldığı süre)
   const lineData = {
-    labels: zaman_serisi.map(z => new Date(z.tarih).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' })),
+    labels: zaman_serisi.map(z => formatGunEtiketi(z.tarih)),
     datasets: [{
       label: 'Günlük Katılım',
       data: zaman_serisi.map(z => Number(z.katilim_sayisi)),
@@ -125,6 +180,23 @@ export default function AdminDashboardPage() {
   };
 
   const paylasimLinki = `${window.location.origin}/s/${anket.paylasim_token}`;
+  const anketKodu = anket.paylasim_token;
+
+  const exportResponses = async () => {
+    try {
+      const res = await adminAPI.exportResponses(anket.id);
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'text/csv;charset=utf-8' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${slugify(anket.baslik || `anket-${anket.id}`)}-cevaplar.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      alert(await getExportErrorMessage(err));
+    }
+  };
 
   return (
     <AdminLayout>
@@ -139,6 +211,15 @@ export default function AdminDashboardPage() {
           <button className="btn btn-outline" onClick={yukle}>🔄 Yenile</button>
           <button className="btn btn-outline" onClick={() => { navigator.clipboard.writeText(paylasimLinki); alert('Link kopyalandı!'); }}>
             🔗 Link Kopyala
+          </button>
+          <button className="btn btn-outline" onClick={() => { navigator.clipboard.writeText(anketKodu); alert('Anket kodu kopyalandı!'); }}>
+            # Kod Kopyala
+          </button>
+          <button className="btn btn-outline" onClick={() => navigate(`/kiosk/${anket.paylasim_token}`)}>
+            🖥 Kiosk Modu
+          </button>
+          <button className="btn btn-primary" onClick={exportResponses}>
+            ⬇ Cevapları Dışa Aktar
           </button>
         </div>
       </div>
@@ -158,6 +239,16 @@ export default function AdminDashboardPage() {
         )}
       </div>
 
+      <div className="card" style={{ marginBottom: 24 }}>
+        <h2 style={{ fontWeight: 700, marginBottom: 10 }}>Anket Kodu</h2>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: 12 }}>
+          Katılımcılar bu kodu anasayfadaki "Ankete Katıl" alanına girerek ankete ulaşabilir.
+        </p>
+        <div style={{ background: 'var(--bg)', borderRadius: 10, padding: '12px 20px', fontFamily: 'monospace', fontSize: '0.9rem', wordBreak: 'break-all' }}>
+          {anketKodu}
+        </div>
+      </div>
+
       {/* Özet İstatistik Kutuları */}
       <div className="stats-row">
         <div className="stat-box">
@@ -175,15 +266,30 @@ export default function AdminDashboardPage() {
           <div className="stat-label">Toplam Soru</div>
         </div>
         <div className="stat-box">
-          <div className="stat-number">{zaman_serisi.length}</div>
-          <div className="stat-label">Aktif Gün</div>
+          <div className="stat-number">{aktifKatilimGunu}</div>
+          <div className="stat-label">Katılım Olan Gün</div>
         </div>
       </div>
 
       {/* Zaman Serisi - Çizgi Grafik */}
       {zaman_serisi.length > 0 && (
         <div className="card" style={{ marginBottom: 24 }}>
-          <h2 style={{ fontWeight: 700, marginBottom: 20 }}>📈 Günlük Katılım Trendi (Son 30 Gün)</h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', marginBottom: 20 }}>
+            <div>
+              <h2 style={{ fontWeight: 700, marginBottom: 6 }}>📈 Günlük Katılım Trendi</h2>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                Anketin yayında kaldığı {toplamYayinGunu} günlük süre boyunca tamamlanan katılımlar.
+              </p>
+            </div>
+            {ozet.zirve_gun && (
+              <div style={{ minWidth: 180, background: 'var(--bg)', borderRadius: 8, padding: '10px 12px' }}>
+                <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 800 }}>Zirve Gün</div>
+                <div style={{ fontWeight: 850, color: 'var(--primary)', marginTop: 4 }}>
+                  {formatGunEtiketi(ozet.zirve_gun.tarih)} · {ozet.zirve_gun.katilim_sayisi} katılım
+                </div>
+              </div>
+            )}
+          </div>
           <Line data={lineData} options={{
             responsive: true,
             plugins: { legend: { display: false }, title: { display: false } },
@@ -220,4 +326,30 @@ export default function AdminDashboardPage() {
       )}
     </AdminLayout>
   );
+}
+
+function slugify(value) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9-_]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .toLowerCase() || 'anket';
+}
+
+async function getExportErrorMessage(err) {
+  const fallback = 'Cevaplar dışa aktarılamadı.';
+  const data = err.response?.data;
+
+  if (data instanceof Blob) {
+    try {
+      const text = await data.text();
+      const parsed = JSON.parse(text);
+      return parsed.error || fallback;
+    } catch {
+      return fallback;
+    }
+  }
+
+  return data?.error || fallback;
 }
