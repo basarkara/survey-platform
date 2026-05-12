@@ -43,6 +43,7 @@ export const adminAPI = {
   getSurveyById: (id) => api.get(`/admin/surveys/${id}`),
   getDashboard: (id) => api.get(`/admin/surveys/${id}/dashboard`),
   exportResponses: (id) => api.get(`/admin/surveys/${id}/export`, { responseType: 'blob' }),
+  duplicateSurvey: (id, data) => api.post(`/admin/surveys/${id}/duplicate`, data),
   updateSurvey: (id, data) => api.put(`/admin/surveys/${id}`, data),
   deleteSurvey: (id) => api.delete(`/admin/surveys/${id}`),
 };

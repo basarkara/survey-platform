@@ -11,6 +11,7 @@ import SurveyParticipantPage from './pages/SurveyParticipantPage';
 import AdminSurveysPage from './pages/admin/AdminSurveysPage';
 import AdminCreateSurveyPage from './pages/admin/AdminCreateSurveyPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
+import AdminSurveyQrPage from './pages/admin/AdminSurveyQrPage';
 
 /* ── Route Guard: Giriş Yapmış Kullanıcı ───────────────────── */
 function AuthenticatedRoute({ children }) {
@@ -49,6 +50,7 @@ function AppRoutes() {
       <Route path="/admin" element={<AuthenticatedRoute><AdminSurveysPage /></AuthenticatedRoute>} />
       <Route path="/admin/surveys/new" element={<AuthenticatedRoute><AdminCreateSurveyPage /></AuthenticatedRoute>} />
       <Route path="/admin/surveys/:id/dashboard" element={<AuthenticatedRoute><AdminDashboardPage /></AuthenticatedRoute>} />
+      <Route path="/admin/surveys/:id/qr" element={<AuthenticatedRoute><AdminSurveyQrPage /></AuthenticatedRoute>} />
 
       {/* Default yönlendirme artık güvenli! */}
       <Route path="/" element={<HomeRoute />} />

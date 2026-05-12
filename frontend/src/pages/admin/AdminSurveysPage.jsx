@@ -67,6 +67,26 @@ export default function AdminSurveysPage() {
     }
   };
 
+  const duplicateSurvey = async (anket, e) => {
+    e.stopPropagation();
+    const yeniAd = window.prompt('Yeni anket adını giriniz:', `${anket.baslik} - Kopya`);
+    if (yeniAd === null) return;
+
+    const baslik = yeniAd.trim();
+    if (!baslik) {
+      alert('Yeni anket adı boş olamaz.');
+      return;
+    }
+
+    try {
+      const res = await adminAPI.duplicateSurvey(anket.id, { baslik });
+      setAnketler(prev => [res.data.anket, ...prev]);
+      navigate(`/admin/surveys/${res.data.anket.id}/dashboard`);
+    } catch (err) {
+      alert(err.response?.data?.error || 'Anket çoğaltılamadı.');
+    }
+  };
+
   return (
     <AdminLayout>
 
@@ -168,9 +188,21 @@ export default function AdminSurveysPage() {
                 </button>
                 <button
                   className="btn btn-outline btn-sm"
+                  onClick={e => { e.stopPropagation(); navigate(`/admin/surveys/${anket.id}/qr`); }}
+                >
+                  QR Kod Oluştur
+                </button>
+                <button
+                  className="btn btn-outline btn-sm"
                   onClick={e => openKioskMode(anket.paylasim_token, e)}
                 >
                   🖥 Kiosk Modu
+                </button>
+                <button
+                  className="btn btn-outline btn-sm"
+                  onClick={e => duplicateSurvey(anket, e)}
+                >
+                  ⧉ Bu Anketi Çoğalt
                 </button>
                 <button
                   className="btn btn-outline btn-sm"

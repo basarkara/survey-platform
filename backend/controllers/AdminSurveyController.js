@@ -371,6 +371,69 @@ const updateSurvey = async (req, res) => {
   }
 };
 
+// POST /api/admin/surveys/:id/duplicate - Anketi sorularıyla birlikte çoğalt
+const duplicateSurvey = async (req, res) => {
+  const t = await sequelize.transaction();
+  try {
+    const { baslik } = req.body;
+    const yeniBaslik = typeof baslik === 'string' ? baslik.trim() : '';
+
+    if (!yeniBaslik) {
+      await t.rollback();
+      return res.status(400).json({ error: 'Yeni anket adı zorunludur.' });
+    }
+
+    const kaynakAnket = await Anket.findOne({
+      where: { id: req.params.id, admin_id: req.kullanici.id },
+      include: [{ model: Soru, as: 'sorular' }],
+      transaction: t,
+    });
+
+    if (!kaynakAnket) {
+      await t.rollback();
+      return res.status(404).json({ error: 'Anket bulunamadı.' });
+    }
+
+    const yeniAnket = await Anket.create({
+      admin_id: req.kullanici.id,
+      baslik: yeniBaslik,
+      aciklama: kaynakAnket.aciklama,
+      bitis_tarihi: kaynakAnket.bitis_tarihi,
+      kota: kaynakAnket.kota,
+      aktif: kaynakAnket.aktif,
+    }, { transaction: t });
+
+    const kaynakSorular = [...(kaynakAnket.sorular || [])].sort((a, b) => a.sira_no - b.sira_no);
+    const yeniSorular = await Promise.all(
+      kaynakSorular.map((soru) =>
+        Soru.create({
+          anket_id: yeniAnket.id,
+          soru_metni: soru.soru_metni,
+          soru_tipi: soru.soru_tipi,
+          zorunlu: soru.zorunlu,
+          sira_no: soru.sira_no,
+          secenekler: soru.secenekler ? JSON.parse(JSON.stringify(soru.secenekler)) : null,
+        }, { transaction: t })
+      )
+    );
+
+    await t.commit();
+
+    res.status(201).json({
+      message: 'Anket başarıyla çoğaltıldı.',
+      anket: {
+        ...yeniAnket.toJSON(),
+        sorular: yeniSorular,
+        tamamlanan_katilim: 0,
+      },
+    });
+  } catch (err) {
+    await t.rollback();
+    console.error('Anket çoğaltma hatası:', err);
+    res.status(500).json({ error: 'Anket çoğaltılamadı.' });
+  }
+};
+
 // GET /api/admin/surveys/:id/export - Cevapları CSV olarak dışa aktar
 const exportSurveyResponses = async (req, res) => {
   try {
@@ -478,4 +541,4 @@ const deleteSurvey = async (req, res) => {
   }
 };
 
-module.exports = { createSurvey, getSurveys, getSurveyById, getDashboard, updateSurvey, exportSurveyResponses, deleteSurvey };
+module.exports = { createSurvey, getSurveys, getSurveyById, getDashboard, updateSurvey, duplicateSurvey, exportSurveyResponses, deleteSurvey };

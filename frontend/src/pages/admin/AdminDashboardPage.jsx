@@ -218,6 +218,9 @@ export default function AdminDashboardPage() {
           <button className="btn btn-outline" onClick={() => navigate(`/kiosk/${anket.paylasim_token}`)}>
             🖥 Kiosk Modu
           </button>
+          <button className="btn btn-outline" onClick={() => navigate(`/admin/surveys/${anket.id}/qr`)}>
+            QR Kod Oluştur
+          </button>
           <button className="btn btn-primary" onClick={exportResponses}>
             ⬇ Cevapları Dışa Aktar
           </button>

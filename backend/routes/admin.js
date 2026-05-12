@@ -6,6 +6,7 @@ const {
   getSurveyById,
   getDashboard,
   updateSurvey,
+  duplicateSurvey,
   exportSurveyResponses,
   deleteSurvey,
 } = require('../controllers/AdminSurveyController');
@@ -26,6 +27,9 @@ router.get('/surveys/:id/export', exportSurveyResponses);
 
 // GET /api/admin/surveys/:id/dashboard - Dashboard verisi
 router.get('/surveys/:id/dashboard', getDashboard);
+
+// POST /api/admin/surveys/:id/duplicate - Anketi çoğalt
+router.post('/surveys/:id/duplicate', duplicateSurvey);
 
 // PUT /api/admin/surveys/:id - Anket güncelle
 router.put('/surveys/:id', updateSurvey);
