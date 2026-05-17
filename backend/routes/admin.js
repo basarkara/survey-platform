@@ -5,16 +5,18 @@ const {
   getSurveys,
   getSurveyById,
   getDashboard,
+  getCrossTabAnalysis,
   updateSurvey,
   duplicateSurvey,
   exportSurveyResponses,
   deleteSurvey,
 } = require('../controllers/AdminSurveyController');
-const { authenticate } = require('../middleware/auth');
+const { authenticate, adminOnly } = require('../middleware/auth');
 
-// Anket yönetimi giriş yapmış tüm kullanıcılar için açıktır.
-// Controller katmanında her kullanıcı yalnızca kendi anketlerini görür/yönetir.
+// Anket yönetimi yalnızca admin rolündeki kullanıcılar için açıktır.
+// Controller katmanında admin yine yalnızca kendi anketlerini görür/yönetir.
 router.use(authenticate);
+router.use(adminOnly);
 
 // POST /api/admin/surveys - Anket oluştur
 router.post('/surveys', createSurvey);
@@ -27,6 +29,9 @@ router.get('/surveys/:id/export', exportSurveyResponses);
 
 // GET /api/admin/surveys/:id/dashboard - Dashboard verisi
 router.get('/surveys/:id/dashboard', getDashboard);
+
+// GET /api/admin/surveys/:id/crosstab - İki soru arasında ilişki analizi
+router.get('/surveys/:id/crosstab', getCrossTabAnalysis);
 
 // POST /api/admin/surveys/:id/duplicate - Anketi çoğalt
 router.post('/surveys/:id/duplicate', duplicateSurvey);

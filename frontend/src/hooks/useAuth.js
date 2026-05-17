@@ -10,10 +10,33 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     const kaydedilen = localStorage.getItem('kullanici');
-    if (token && kaydedilen) {
-      setKullanici(JSON.parse(kaydedilen));
-    }
-    setYukleniyor(false);
+
+    const loadUser = async () => {
+      if (!token) {
+        setYukleniyor(false);
+        return;
+      }
+
+      if (kaydedilen) {
+        try {
+          setKullanici(JSON.parse(kaydedilen));
+        } catch (_) {
+          localStorage.removeItem('kullanici');
+        }
+      }
+
+      try {
+        const res = await authAPI.me();
+        localStorage.setItem('kullanici', JSON.stringify(res.data.kullanici));
+        setKullanici(res.data.kullanici);
+      } catch (_) {
+        setKullanici(null);
+      } finally {
+        setYukleniyor(false);
+      }
+    };
+
+    loadUser();
   }, []);
 
   const login = async (eposta, sifre) => {

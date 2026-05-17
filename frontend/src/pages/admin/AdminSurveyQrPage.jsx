@@ -1,17 +1,14 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import QRCode from 'qrcode';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { adminAPI } from '../../services/api';
-import { createQrMatrix } from '../../utils/qrCode';
-
-const MODULE_SIZE = 10;
-const QUIET_ZONE = 4;
 
 export default function AdminSurveyQrPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const svgRef = useRef(null);
   const [data, setData] = useState(null);
+  const [qrDataUrl, setQrDataUrl] = useState('');
   const [hata, setHata] = useState('');
   const [yukleniyor, setYukleniyor] = useState(true);
 
@@ -32,51 +29,52 @@ export default function AdminSurveyQrPage() {
 
   const anket = data?.anket;
   const surveyUrl = anket ? `${window.location.origin}/s/${anket.paylasim_token}` : '';
-  const qrMatrix = useMemo(() => {
-    if (!surveyUrl) return null;
-    try {
-      return createQrMatrix(surveyUrl);
-    } catch (err) {
-      setHata(err.message || 'QR kod oluşturulamadı.');
-      return null;
-    }
-  }, [surveyUrl]);
+  const qrFileName = useMemo(
+    () => `${slugify(anket?.baslik || `anket-${anket?.id || id}`)}-qr-kod.png`,
+    [anket, id]
+  );
 
-  const viewSize = qrMatrix ? (qrMatrix.length + QUIET_ZONE * 2) * MODULE_SIZE : 0;
+  useEffect(() => {
+    if (!surveyUrl) return;
+
+    let aktif = true;
+    QRCode.toDataURL(surveyUrl, {
+      errorCorrectionLevel: 'H',
+      margin: 4,
+      width: 1200,
+      color: {
+        dark: '#111827',
+        light: '#ffffff'
+      }
+    })
+      .then((url) => {
+        if (aktif) {
+          setQrDataUrl(url);
+          setHata('');
+        }
+      })
+      .catch(() => {
+        if (aktif) setHata('QR kod oluşturulamadı.');
+      });
+
+    return () => {
+      aktif = false;
+    };
+  }, [surveyUrl]);
 
   const handlePrint = () => {
     window.print();
   };
 
   const handleDownload = () => {
-    if (!svgRef.current || !anket) return;
+    if (!qrDataUrl) return;
 
-    const serializer = new XMLSerializer();
-    const svgText = serializer.serializeToString(svgRef.current);
-    const blob = new Blob([svgText], { type: 'image/svg+xml;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const image = new Image();
-
-    image.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = 1200;
-      canvas.height = 1200;
-      const context = canvas.getContext('2d');
-      context.fillStyle = '#ffffff';
-      context.fillRect(0, 0, canvas.width, canvas.height);
-      context.drawImage(image, 0, 0, canvas.width, canvas.height);
-      URL.revokeObjectURL(url);
-
-      const pngUrl = canvas.toDataURL('image/png');
-      const link = document.createElement('a');
-      link.href = pngUrl;
-      link.download = `${slugify(anket.baslik || `anket-${anket.id}`)}-qr-kod.png`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    };
-
-    image.src = url;
+    const link = document.createElement('a');
+    link.href = qrDataUrl;
+    link.download = qrFileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
   };
 
   return (
@@ -109,30 +107,16 @@ export default function AdminSurveyQrPage() {
             </div>
 
             <div className="qr-code-box">
-              <svg
-                ref={svgRef}
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox={`0 0 ${viewSize} ${viewSize}`}
-                width="100%"
-                height="100%"
-                role="img"
-                aria-label={`${anket.baslik} anketi QR kodu`}
-                shapeRendering="crispEdges"
-              >
-                <rect width={viewSize} height={viewSize} fill="#ffffff" />
-                {qrMatrix.map((row, rowIndex) =>
-                  row.map((dark, colIndex) => dark ? (
-                    <rect
-                      key={`${rowIndex}-${colIndex}`}
-                      x={(colIndex + QUIET_ZONE) * MODULE_SIZE}
-                      y={(rowIndex + QUIET_ZONE) * MODULE_SIZE}
-                      width={MODULE_SIZE}
-                      height={MODULE_SIZE}
-                      fill="#111827"
-                    />
-                  ) : null)
-                )}
-              </svg>
+              {qrDataUrl ? (
+                <img
+                  className="qr-code-image"
+                  src={qrDataUrl}
+                  alt={`${anket.baslik} anketi QR kodu`}
+                  draggable="false"
+                />
+              ) : (
+                <div className="spinner" />
+              )}
             </div>
 
             <p className="qr-help-text">Ankete katılmak için kameranızı QR koda tutun.</p>
@@ -143,7 +127,7 @@ export default function AdminSurveyQrPage() {
             <button className="btn btn-primary" onClick={handlePrint}>
               Yazdır
             </button>
-            <button className="btn btn-outline" onClick={handleDownload}>
+            <button className="btn btn-outline" onClick={handleDownload} disabled={!qrDataUrl}>
               Ekran Görüntüsü Olarak İndir
             </button>
           </div>

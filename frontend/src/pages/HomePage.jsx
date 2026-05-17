@@ -8,6 +8,7 @@ const HomePage = () => {
   const [anketKodu, setAnketKodu] = useState('');
   const [kodHatasi, setKodHatasi] = useState('');
   const displayName = kullanici?.ad || kullanici?.isim || 'Kullanıcı';
+  const isAdmin = kullanici?.rol === 'admin';
 
   const handleJoinSurvey = (e) => {
     e.preventDefault();
@@ -70,13 +71,15 @@ const HomePage = () => {
           </p>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <button
-              type="button"
-              onClick={() => navigate('/admin/surveys/new')}
-              className="inline-flex items-center justify-center rounded-lg bg-brand-primary px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-primary/90 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:ring-offset-2"
-            >
-              Anket Oluştur
-            </button>
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={() => navigate('/admin/surveys/new')}
+                className="inline-flex items-center justify-center rounded-lg bg-brand-primary px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-primary/90 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:ring-offset-2"
+              >
+                Anket Oluştur
+              </button>
+            )}
             <a
               href="#ankete-katil"
               className="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:border-brand-primary hover:text-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary focus:ring-offset-2"

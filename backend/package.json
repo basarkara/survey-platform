@@ -8,7 +8,8 @@
     "dev": "nodemon server.js",
     "migrate": "node migrations/run.js",
     "seed:admin": "node seed/createAdmin.js",
-    "seed:demo": "node seed/demoData.js"
+    "seed:demo": "node seed/demoData.js",
+    "seed:crosstab-demo": "node seed/crossTabDemoData.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

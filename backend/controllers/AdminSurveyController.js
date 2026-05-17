@@ -1,5 +1,6 @@
 const { Op } = require('sequelize');
 const { Anket, Soru, AnketYaniti, Cevap, sequelize } = require('../models');
+const { analyzeSurveyCrossTab } = require('../services/CrossTabAnalysisService');
 
 // POST /api/admin/surveys
 // Yeni anket, sorular ve şıkları oluşturur
@@ -191,6 +192,24 @@ const getDashboard = async (req, res) => {
   } catch (err) {
     console.error('Dashboard hatası:', err);
     res.status(500).json({ error: 'Dashboard verisi alınamadı.' });
+  }
+};
+
+// GET /api/admin/surveys/:id/crosstab?rowQuestionId=3&columnQuestionId=7
+const getCrossTabAnalysis = async (req, res) => {
+  try {
+    const result = await analyzeSurveyCrossTab({
+      surveyId: req.params.id,
+      userId: req.kullanici.id,
+      rowQuestionId: req.query.rowQuestionId,
+      columnQuestionId: req.query.columnQuestionId,
+    });
+
+    res.json(result);
+  } catch (err) {
+    const statusCode = err.statusCode || 500;
+    if (statusCode >= 500) console.error('Çapraz tablo analizi hatası:', err);
+    res.status(statusCode).json({ error: err.message || 'Çapraz tablo analizi oluşturulamadı.' });
   }
 };
 
@@ -541,4 +560,4 @@ const deleteSurvey = async (req, res) => {
   }
 };
 
-module.exports = { createSurvey, getSurveys, getSurveyById, getDashboard, updateSurvey, duplicateSurvey, exportSurveyResponses, deleteSurvey };
+module.exports = { createSurvey, getSurveys, getSurveyById, getDashboard, getCrossTabAnalysis, updateSurvey, duplicateSurvey, exportSurveyResponses, deleteSurvey };

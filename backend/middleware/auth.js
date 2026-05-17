@@ -30,9 +30,15 @@ const authenticate = async (req, res, next) => {
   }
 };
 
-// Eski admin koruması. Anket oluşturma/yönetme akışında artık giriş yapmış
-// tüm kullanıcılar yetkili kabul edilir; geriye dönük importlar kırılmasın.
 const adminOnly = (req, res, next) => {
+  if (!req.kullanici) {
+    return res.status(401).json({ error: 'Bu işlem için giriş yapmanız gerekmektedir.' });
+  }
+
+  if (req.kullanici.rol !== 'admin') {
+    return res.status(403).json({ error: 'Bu işlem için admin yetkisi gerekmektedir.' });
+  }
+
   next();
 };
 

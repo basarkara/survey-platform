@@ -534,6 +534,188 @@ textarea.form-input {
   gap: 18px;
 }
 
+/* Analytics */
+.analytics-selector {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 180px;
+  gap: 14px;
+  align-items: end;
+  margin-bottom: 18px;
+}
+
+.analytics-selector-action {
+  margin-bottom: 18px;
+}
+
+.analytics-results {
+  display: grid;
+  gap: 18px;
+}
+
+.relationship-card {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+}
+
+.relationship-status {
+  width: fit-content;
+  padding: 7px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.relationship-status.significant {
+  background: var(--success-50);
+  color: #047857;
+}
+
+.relationship-status.neutral {
+  background: #F3F4F6;
+  color: var(--text-muted);
+}
+
+.relationship-summary {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.55;
+}
+
+.relationship-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.relationship-metrics > div {
+  padding: 12px;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  background: white;
+}
+
+.relationship-metrics span,
+.relationship-metrics small {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.relationship-metrics strong {
+  display: block;
+  margin: 4px 0;
+  color: var(--primary);
+  font-size: 1.35rem;
+  font-weight: 850;
+}
+
+.relationship-details {
+  display: grid;
+  gap: 6px;
+}
+
+.relationship-details p,
+.decision-advice p,
+.relationship-warnings p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.decision-advice {
+  padding: 12px;
+  border-radius: 8px;
+  background: white;
+}
+
+.decision-advice strong {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.relationship-warnings {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid #FDE68A;
+  border-radius: 8px;
+  background: var(--warning-50);
+}
+
+.crosstab-table-wrap {
+  overflow-x: auto;
+}
+
+.crosstab-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.crosstab-meta span {
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: var(--primary-50);
+  color: var(--primary);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.crosstab-table {
+  width: 100%;
+  min-width: 680px;
+  border-collapse: collapse;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: white;
+}
+
+.crosstab-table th,
+.crosstab-table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border-soft);
+  border-right: 1px solid var(--border-soft);
+  text-align: left;
+  vertical-align: top;
+}
+
+.crosstab-table thead th {
+  background: var(--bg);
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  font-weight: 850;
+}
+
+.crosstab-table th span,
+.crosstab-table td span {
+  display: block;
+  margin-top: 4px;
+  color: var(--text-muted);
+  font-size: 0.74rem;
+  font-weight: 650;
+}
+
+.crosstab-table td strong {
+  display: block;
+  color: var(--text-primary);
+  font-size: 1.05rem;
+}
+
+.crosstab-total {
+  color: var(--primary);
+  font-weight: 850;
+}
+
 /* QR page */
 .qr-page-wrap {
   display: grid;
@@ -589,10 +771,18 @@ textarea.form-input {
   width: min(100%, 380px);
   aspect-ratio: 1;
   margin: 0 auto;
-  padding: 16px;
+  padding: 12px;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: white;
+}
+
+.qr-code-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  object-fit: contain;
 }
 
 .qr-help-text {
@@ -825,6 +1015,11 @@ textarea.form-input {
 
   .question-nav {
     flex-direction: column;
+  }
+
+  .analytics-selector,
+  .relationship-metrics {
+    grid-template-columns: 1fr;
   }
 }
 

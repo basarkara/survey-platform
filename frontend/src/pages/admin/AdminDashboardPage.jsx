@@ -8,6 +8,9 @@ import {
 } from 'chart.js';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { adminAPI } from '../../services/api';
+import CrossTabSelector from '../../components/analytics/CrossTabSelector';
+import CrossTabTable from '../../components/analytics/CrossTabTable';
+import RelationshipInsightCard from '../../components/analytics/RelationshipInsightCard';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale,
   PointElement, LineElement, BarElement, Title, Filler);
@@ -139,6 +142,11 @@ export default function AdminDashboardPage() {
   const [data, setData] = useState(null);
   const [yukleniyor, setYukleniyor] = useState(true);
   const [sonGuncelleme, setSonGuncelleme] = useState(null);
+  const [rowQuestionId, setRowQuestionId] = useState('');
+  const [columnQuestionId, setColumnQuestionId] = useState('');
+  const [crossTabResult, setCrossTabResult] = useState(null);
+  const [crossTabError, setCrossTabError] = useState('');
+  const [crossTabLoading, setCrossTabLoading] = useState(false);
 
   const yukle = useCallback(async () => {
     try {
@@ -195,6 +203,31 @@ export default function AdminDashboardPage() {
       window.URL.revokeObjectURL(url);
     } catch (err) {
       alert(await getExportErrorMessage(err));
+    }
+  };
+
+  const analyzeCrossTab = async () => {
+    setCrossTabError('');
+    setCrossTabResult(null);
+
+    if (!rowQuestionId || !columnQuestionId) {
+      setCrossTabError('Lütfen satır ve sütun sorularını seçin.');
+      return;
+    }
+
+    if (rowQuestionId === columnQuestionId) {
+      setCrossTabError('Aynı soru iki kez seçilemez. Lütfen iki farklı soru seçin.');
+      return;
+    }
+
+    setCrossTabLoading(true);
+    try {
+      const res = await adminAPI.getCrossTabAnalysis(anket.id, rowQuestionId, columnQuestionId);
+      setCrossTabResult(res.data);
+    } catch (err) {
+      setCrossTabError(err.response?.data?.error || 'İlişki analizi oluşturulamadı.');
+    } finally {
+      setCrossTabLoading(false);
     }
   };
 
@@ -313,6 +346,35 @@ export default function AdminDashboardPage() {
             <SoruGrafik istat={istat} />
           </div>
         ))}
+      </div>
+
+      <div className="card" style={{ marginTop: 24 }}>
+        <div style={{ marginBottom: 18 }}>
+          <h2 style={{ fontWeight: 800, marginBottom: 6 }}>Çapraz Tablo ve İlişki Analizi</h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+            İki farklı soru arasındaki ilişkiyi inceleyin. Text soruları bu analizde desteklenmez.
+            Sonuçlar karar desteği sağlar; neden-sonuç ilişkisi kanıtlamaz.
+          </p>
+        </div>
+
+        <CrossTabSelector
+          questions={soru_istatistikleri}
+          rowQuestionId={rowQuestionId}
+          columnQuestionId={columnQuestionId}
+          onRowChange={setRowQuestionId}
+          onColumnChange={setColumnQuestionId}
+          onAnalyze={analyzeCrossTab}
+          loading={crossTabLoading}
+        />
+
+        {crossTabError && <div className="alert alert-error">{crossTabError}</div>}
+
+        {crossTabResult && (
+          <div className="analytics-results">
+            <RelationshipInsightCard analysis={crossTabResult} />
+            <CrossTabTable analysis={crossTabResult} />
+          </div>
+        )}
       </div>
 
       {soru_istatistikleri.length === 0 && (

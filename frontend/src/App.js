@@ -13,11 +13,12 @@ import AdminCreateSurveyPage from './pages/admin/AdminCreateSurveyPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import AdminSurveyQrPage from './pages/admin/AdminSurveyQrPage';
 
-/* ── Route Guard: Giriş Yapmış Kullanıcı ───────────────────── */
-function AuthenticatedRoute({ children }) {
+/* ── Route Guard: Sadece Admin ─────────────────────────────── */
+function AdminRoute({ children }) {
   const { kullanici, yukleniyor } = useAuth();
   if (yukleniyor) return <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: 'var(--bg-base)' }}><div className="spinner" /></div>;
   if (!kullanici) return <Navigate to="/login" replace />;
+  if (kullanici.rol !== 'admin') return <Navigate to="/" replace />;
   return children;
 }
 
@@ -47,10 +48,10 @@ function AppRoutes() {
       <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
       <Route path="/register" element={<GuestRoute><RegisterPage /></GuestRoute>} />
 
-      <Route path="/admin" element={<AuthenticatedRoute><AdminSurveysPage /></AuthenticatedRoute>} />
-      <Route path="/admin/surveys/new" element={<AuthenticatedRoute><AdminCreateSurveyPage /></AuthenticatedRoute>} />
-      <Route path="/admin/surveys/:id/dashboard" element={<AuthenticatedRoute><AdminDashboardPage /></AuthenticatedRoute>} />
-      <Route path="/admin/surveys/:id/qr" element={<AuthenticatedRoute><AdminSurveyQrPage /></AuthenticatedRoute>} />
+      <Route path="/admin" element={<AdminRoute><AdminSurveysPage /></AdminRoute>} />
+      <Route path="/admin/surveys/new" element={<AdminRoute><AdminCreateSurveyPage /></AdminRoute>} />
+      <Route path="/admin/surveys/:id/dashboard" element={<AdminRoute><AdminDashboardPage /></AdminRoute>} />
+      <Route path="/admin/surveys/:id/qr" element={<AdminRoute><AdminSurveyQrPage /></AdminRoute>} />
 
       {/* Default yönlendirme artık güvenli! */}
       <Route path="/" element={<HomeRoute />} />

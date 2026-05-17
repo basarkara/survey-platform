@@ -42,6 +42,9 @@ export const adminAPI = {
   getSurveys: () => api.get('/admin/surveys'),
   getSurveyById: (id) => api.get(`/admin/surveys/${id}`),
   getDashboard: (id) => api.get(`/admin/surveys/${id}/dashboard`),
+  getCrossTabAnalysis: (surveyId, rowQuestionId, columnQuestionId) => api.get(`/admin/surveys/${surveyId}/crosstab`, {
+    params: { rowQuestionId, columnQuestionId },
+  }),
   exportResponses: (id) => api.get(`/admin/surveys/${id}/export`, { responseType: 'blob' }),
   duplicateSurvey: (id, data) => api.post(`/admin/surveys/${id}/duplicate`, data),
   updateSurvey: (id, data) => api.put(`/admin/surveys/${id}`, data),
