@@ -8,7 +8,6 @@ npm-debug.log*
 .env.production
 
 # Build outputs
-frontend/build/
 frontend/.env.local
 
 # Logs
