@@ -79,3 +79,85 @@ CREATE TABLE IF NOT EXISTS `Sorular` (
   COMMENT='Ankete ait sorular - JSON ile esnek seçenek yapısı';
 
 -- ============================================================
+-- 4. ANKET_YANITLARI (Survey_Responses) Tablosu
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `Anket_Yanitlari` (
+  `id`                INT           NOT NULL AUTO_INCREMENT,
+  `anket_id`          INT           NOT NULL,
+  `kullanici_id`      INT           DEFAULT NULL,
+  `ip_adresi`         VARCHAR(45)   NOT NULL,
+  `baslangic_tarihi`  DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `bitis_tarihi`      DATETIME      DEFAULT NULL,
+  `createdAt`         DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updatedAt`         DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  INDEX `idx_anket_yanitlari_anket_id` (`anket_id`),
+  INDEX `idx_anket_yanitlari_kullanici_id` (`kullanici_id`),
+  INDEX `idx_anket_yanitlari_ip` (`ip_adresi`),
+  INDEX `idx_anket_yanitlari_anket_ip` (`anket_id`, `ip_adresi`),
+  CONSTRAINT `fk_yanitlar_anket`
+    FOREIGN KEY (`anket_id`) REFERENCES `Anketler` (`id`)
+    ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_yanitlar_kullanici`
+    FOREIGN KEY (`kullanici_id`) REFERENCES `Kullanicilar` (`id`)
+    ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='Katılımcı oturumları - anonim veya kayıtlı';
+
+-- ============================================================
+-- Mükerrer tamamlanmış katılım kontrolü
+-- PostgreSQL partial unique index karşılığı:
+-- MariaDB partial index desteklemez, trigger ile sağlanır
+-- ============================================================
+DELIMITER $$
+
+CREATE TRIGGER `trg_tek_tamamlanmis_katilim`
+BEFORE INSERT ON `Anket_Yanitlari`
+FOR EACH ROW
+BEGIN
+  DECLARE v_count INT;
+  IF NEW.bitis_tarihi IS NOT NULL THEN
+    SELECT COUNT(*) INTO v_count
+    FROM `Anket_Yanitlari`
+    WHERE `anket_id`   = NEW.anket_id
+      AND `ip_adresi`  = NEW.ip_adresi
+      AND `bitis_tarihi` IS NOT NULL;
+    IF v_count > 0 THEN
+      SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Bu IP adresi bu anketi zaten tamamlamış.';
+    END IF;
+  END IF;
+END$$
+
+DELIMITER ;
+
+-- ============================================================
+-- 5. CEVAPLAR (Answers) Tablosu
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `Cevaplar` (
+  `id`            INT     NOT NULL AUTO_INCREMENT,
+  `yanit_id`      INT     NOT NULL,
+  `soru_id`       INT     NOT NULL,
+  `cevap_verisi`  JSON    NOT NULL,
+  `createdAt`     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updatedAt`     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  INDEX `idx_cevaplar_yanit_id` (`yanit_id`),
+  INDEX `idx_cevaplar_soru_id` (`soru_id`),
+  CONSTRAINT `fk_cevaplar_yanit`
+    FOREIGN KEY (`yanit_id`) REFERENCES `Anket_Yanitlari` (`id`)
+    ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_cevaplar_soru`
+    FOREIGN KEY (`soru_id`) REFERENCES `Sorular` (`id`)
+    ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='Her soruya verilen cevaplar - JSON ile esnek format';
+
+SET FOREIGN_KEY_CHECKS = 1;
+
+-- ============================================================
+-- Örnek Admin Kullanıcısı (Şifre: Admin123! - bcrypt hash)
+-- Gerçek ortamda bu satırı kaldırın veya değiştirin
+-- ============================================================
+-- INSERT INTO `Kullanicilar` (rol, ad, eposta, sifre_hash)
+-- VALUES ('admin', 'Platform Admin', 'admin@platform.com', '$2b$10$...');
