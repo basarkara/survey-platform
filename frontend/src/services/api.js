@@ -17,11 +17,28 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+const getParticipantKey = () => {
+  const storageKey = 'pollify_participant_key';
+  let value = localStorage.getItem(storageKey);
+
+  if (!value) {
+    value = crypto?.randomUUID
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(16).slice(2)}-${Math.random().toString(16).slice(2)}`;
+    localStorage.setItem(storageKey, value);
+  }
+
+  return value;
+};
+
 // Request interceptor - JWT token ekle
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+  }
+  if (config.url?.startsWith('/public/')) {
+    config.headers['X-Participant-Key'] = getParticipantKey();
   }
   return config;
 });
